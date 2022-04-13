@@ -5,11 +5,19 @@ from time import sleep
 HOST_ROUTER = '192.168.1.1'
 HOST_EQ = '10.7.190.234'
 
-PORTS = 20
-PORTS_START = 2
-# пароль и логин для железок сапротские не то.
-PASS_MAIN_EQ = ''
+###############################################
+# сколько всего портов
+PORTS = 3
+# с какого порта начать
+PORTS_START = 1
+# пароль и логин для железок сапротские не то.#ш
 LOGIN_MAIN_EQ = ''
+PASS_MAIN_EQ = ''
+###############################################
+
+
+router_warning_again_main = []
+router_warning_again = []
 
 
 def _sleep(sec=0.6):
@@ -112,6 +120,59 @@ def settings_rout():
     ''')
 
 
+def main_setup():
+    global router_warning_again
+    connect_eq = tl.Telnet(HOST_EQ)
+    login_(eq=connect_eq, ports=PORTS)
+    router_warning_again = []
+    for port in range(PORTS_START, PORTS + 1):
+        logic_setup(port=port, connect_eq=connect_eq, list_router=router_warning_again)
+    end_setup(connect_eq, router_warning_again)
+
+
+def main_setup_again():
+    global router_warning_again_main, router_warning_again
+    connect_eq = tl.Telnet(HOST_EQ)
+    login_(eq=connect_eq, ports=PORTS)
+    router_warning_again = []
+    for port in router_warning_again_main:
+        logic_setup(port=port, connect_eq=connect_eq, list_router=router_warning_again)
+    end_setup(connect_eq, router_warning_again)
+
+
+def logic_setup(*, port, connect_eq, list_router):
+    start = time.time()
+    try:
+        print(f'Поднимаем порт -{port}')
+        switching_port_up(eq=connect_eq, current_port=port)
+        print(f'Подключаемся к роутеру -{port}')
+        connect_router = tl.Telnet(HOST_ROUTER)
+        print(f'Настраивает роутер -{port}')
+        router_setup(eq_=connect_router)
+        print(f'Готов роутер - {port}')
+        switching_port_down(eq=connect_eq)
+        print(f'Port down - {port}')
+    except Exception:
+        # connect_eq.close()
+        switching_port_down(eq=connect_eq)
+        list_router.append(port)
+        print(f'Какая-то проблема с {port} роутером, Пропускаю его и перехожу к следующему')
+    end = time.time()
+    print('Время настройки - ', end - start)
+
+
+def end_setup(connect_eq, list_router):
+    global router_warning_again_main
+    if len(list_router) != 0:
+        print(f'Проблемы с роутерами {list_router}'
+              f'\nI - для повторной настройки проблемных роутеров')
+        connect_eq.close()
+        router_warning_again_main = list_router
+    else:
+        print(f'Настроено {PORTS} роутеров')
+        connect_eq.close()
+
+
 while True:
     user_input = input('''
     O - для изменения настроек
@@ -121,34 +182,9 @@ while True:
     print('ПОЕХАЛИ')
     if user_input == 'o' or user_input == 'O':
         initial_information()
+    elif user_input == 'i' or user_input == 'I':
+        main_setup_again()
     elif user_input == 'p' or user_input == 'P':
         settings_rout()
     else:
-        connect_eq = tl.Telnet(HOST_EQ)
-        router_warning = []
-        login_(eq=connect_eq, ports=PORTS)
-        for port in range(PORTS_START, PORTS + 1):
-            start = time.time()
-            try:
-                print(f'Поднимаем порт -{port}')
-                switching_port_up(eq=connect_eq, current_port=port)
-                print(f'Подключаемся к роутеру -{port}')
-                connect_router = tl.Telnet(HOST_ROUTER)
-                print(f'Настраивает роутер -{port}')
-                router_setup(eq_=connect_router)
-                print(f'Готов роутер - {port}')
-                switching_port_down(eq=connect_eq)
-                print(f'Port down - {port}')
-            except Exception:
-                # connect_eq.close()
-                switching_port_down(eq=connect_eq)
-                router_warning.append(port)
-                print(f'Какая-то проблема с {port} роутером, Пропускаю его и перехожу к следующему')
-            end = time.time()
-            print('Время настройки - ', end - start)
-        if len(router_warning) != 0:
-            print(f'Проблемы с роутерами {router_warning}')
-            connect_eq.close()
-        else:
-            print(f'Настроено {PORTS} роутеров')
-            connect_eq.close()
+        main_setup()
