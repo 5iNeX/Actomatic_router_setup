@@ -1,0 +1,51 @@
+/interface bridge
+add name=bridgeLan
+/interface ethernet
+set [ find default-name=ether2 ] comment=uplink
+/interface vlan
+add interface=ether5 name=vlan2 vlan-id=2
+add interface=ether5 name=vlan3 vlan-id=3
+add interface=ether5 name=vlan111/1 vlan-id=111
+add interface=ether2 name="vlan3012_nastroika router'a" vlan-id=3012
+/interface wireless security-profiles
+set [ find default=yes ] supplicant-identity=MikroTik
+/ip pool
+add name=dhcp_pool1 ranges=192.168.88.2-192.168.88.254
+/ip dhcp-server
+add address-pool=dhcp_pool1 disabled=no interface=bridgeLan name=dhcp1
+/interface bridge port
+add bridge=bridgeLan interface=ether4 multicast-router=disabled
+add bridge=bridgeLan interface=ether5 multicast-router=disabled
+add bridge=bridgeLan interface=ether1
+add bridge=bridgeLan interface=ether3
+add bridge=bridgeLan interface="vlan3012_nastroika router'a"
+/ip neighbor discovery-settings
+set discover-interface-list=!dynamic
+/ip address
+add address=10.7.8.87/24 interface=ether2 network=10.7.8.0
+add address=192.168.88.1/24 interface=bridgeLan network=192.168.88.0
+add address=192.168.10.1/24 interface=ether5 network=192.168.10.0
+add address=192.168.1.10/24 disabled=yes interface=bridgeLan network=\
+    192.168.1.0
+add address=192.168.0.10/24 interface=bridgeLan network=192.168.0.0
+add address=10.7.190.235/24 interface=vlan111/1 network=10.7.190.0
+add address=192.168.2.10/24 interface=bridgeLan network=192.168.2.0
+add address=192.168.1.15/24 interface="vlan3012_nastroika router'a" network=\
+    192.168.1.0
+/ip dhcp-server network
+add address=192.168.88.0/24 dns-server=93.190.18.10,93.190.19.10 gateway=\
+    192.168.88.1
+/ip firewall nat
+add action=masquerade chain=srcnat
+add action=masquerade chain=srcnat dst-address=10.7.8.87
+add action=masquerade chain=srcnat dst-address=192.168.1.1
+add action=masquerade chain=srcnat dst-address=192.168.0.1
+add action=masquerade chain=srcnat dst-address=10.7.190.234
+/ip route
+add distance=1 gateway=10.7.8.1
+/ip service
+set telnet disabled=yes
+set www disabled=yes
+set ssh disabled=yes
+/system clock
+set time-zone-name=Europe/Moscow
