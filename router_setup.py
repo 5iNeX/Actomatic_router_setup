@@ -11,8 +11,8 @@ PORTS = 20
 # с какого порта начать
 PORTS_START = 1
 # пароль и логин для железок сапротские не то.#ш
-LOGIN_MAIN_EQ = 'mda'
-PASS_MAIN_EQ = 'MiJaEstas'
+LOGIN_MAIN_EQ = 'Your Login'
+PASS_MAIN_EQ = 'Your password'
 ###############################################
 
 
